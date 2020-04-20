@@ -77,7 +77,7 @@ class RidgeRegression:
 		best_LAMBDA,min_RSS=range_scan(best_LAMBDA,min_RSS,LAMBDA_values)
 		return best_LAMBDA
 
-	def fit_gradient(seft,X_train,Y_train,LAMBDA,learning_rate,max_num_epoch=100,batch_size=128):
+	def fit_gradient(self,X_train,Y_train,LAMBDA,learning_rate,max_num_epoch=100,batch_size=128):
 		W=np.random.randn(X_train.shape[1])
 		last_lose=1e9
 		for ep in range(max_num_epoch):
@@ -85,14 +85,14 @@ class RidgeRegression:
 			np.random.shuffle(arr)
 			X_train=X_train[arr]
 			Y_train=Y_train[arr]
-			total_mini_batch=int(np.ceil(X_train.shape[0],batch_size))
+			total_mini_batch=int(np.ceil(X_train.shape[0]/batch_size))
 			for i in range(total_mini_batch):
 				index=i*batch_size
 				X_sub=X_train[index:index+batch_size]
 				Y_sub=Y_train[index:index+batch_size]
-				grad=X_sub.transpose.dot(X_sub.dot(W)-Y_sub)+LAMBDA*W
+				grad=X_sub.transpose().dot(X_sub.dot(W)-Y_sub)+LAMBDA*W
 				W=W-learning_rate*grad
-			new_lose=self.compute_RSS(self.predict(W,X_train,Y_train))
+			new_lose=self.compute_RSS(Y_train,self.predict(W,X_train))
 			if np.abs(new_lose-last_lose)<=1e-5:
 				break
 			last_lose=new_lose
@@ -109,6 +109,8 @@ best_LAMBDA=ridge_regression.get_the_best_LAMBDA(X_train,Y_train)
 print('best LAMBDA : ',best_LAMBDA)
 W_learned=ridge_regression.fit(X_train,Y_train,best_LAMBDA)
 Y_predicted=ridge_regression.predict(W_learned,X_test)
-print(ridge_regression.compute_RSS(Y_test,Y_predicted))
+print('loss 1 :',ridge_regression.compute_RSS(Y_test,Y_predicted))
+W_grad=ridge_regression.fit_gradient(X_train=X_train,Y_train=Y_train,LAMBDA=best_LAMBDA,learning_rate=0.1,batch_size=1)
+print('loss 2 :',ridge_regression.compute_RSS(Y_test,ridge_regression.predict(W_grad,X_test)))
 
 
