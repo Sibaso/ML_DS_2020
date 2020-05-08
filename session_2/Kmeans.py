@@ -1,3 +1,4 @@
+
 from collections import defaultdict
 import numpy as np
 
@@ -8,9 +9,13 @@ class Member:
 		self.doc_id=doc_id
 
 class Cluster:
-	def __init__(self):
+	def __init__(self,label):
 		self.centroid = None
 		self.members = []
+		self.label=label
+
+	def count_member(self):
+		return len(self.members)
 
 	def reset_member(self):
 		self.members = []
@@ -21,7 +26,7 @@ class Cluster:
 class Kmeans:
 	def __init__(self, num_clusters):
 		self.num_clusters = num_clusters
-		self.clusters = [Cluster() for i in range(self.num_clusters)]
+		self.clusters = [Cluster(label) for label in range(self.num_clusters)]
 		self.E=[]
 		self.S=0
 
@@ -36,9 +41,9 @@ class Kmeans:
 				rd[index]=tfidf
 			return np.array(rd)
 
-		with open(data_path,'r') as f:
+		with open(data_path) as f:
 			lines=f.read().splitlines()
-		with open("C:\\Users\\pl\\Documents\\Python_Project\\ML_DS_2020\\session_1\\TF_IDF\\words_idf.txt",'r') as f:
+		with open("C:\\Users\\pl\\Documents\\Python_Project\\ML_DS_2020\\session_1\\TF_IDF\\words_idf.txt") as f:
 			self.vocab_size=len(f.read().splitlines())
 
 		self.data=[]
@@ -51,13 +56,16 @@ class Kmeans:
 			self.data.append(Member(rd,label,doc_id))
 
 	#khoi tao tam cum
-	def random_init(self,seed_value):
-		for cluster in self.clusters:
-			cluster.centroid=self.data[np.random.randint(0,len(self.data))].rd
+	def random_init(self,seed_value): 
+		np.random.seed(seed_value)
+		samples=np.random.choice(len(self.data),self.num_clusters,replace=False)
+		for index,cluster in enumerate(self.clusters):
+			cluster.centroid=self.data[samples[index]].rd
 
 	#tinh khoang cach
 	def compute_distance(self,member,centroid):
-		return np.sqrt(np.sum((member.rd-centroid)**2))
+		distance= np.sqrt(np.sum((member.rd-centroid)**2))
+		return distance
 
 	#chon cum cho member
 	def select_cluser_for(self,member):
@@ -97,14 +105,14 @@ class Kmeans:
 			else:
 				return False
 		else:
-			new_S_minus_S=self.new_S-self.S
+			new_S_minus_S=abs(self.S-self.new_S)
 			self.S=self.new_S
 			if new_S_minus_S<=threshold:
 				return True
 			else:
 				return False
-	
-	#chuay thuat toan Kmeans		
+
+	#chay thuat toan Kmeans		
 	def run(self,seed_value,criterion,threshold):
 		self.random_init(seed_value)
 		self.iteration=0
@@ -115,9 +123,10 @@ class Kmeans:
 			for member in self.data:
 				max_S=self.select_cluser_for(member)
 				self.new_S+=max_S
-			for cluser in self.clusters:
+			for cluster in self.clusters:
 				self.update_centroid_of(cluster)
 			self.iteration+=1
+			print('similarity',self.new_S)
 			if self.stopping_condition(criterion,threshold):
 				break
 
@@ -126,7 +135,7 @@ class Kmeans:
 		majority_sum=0
 		for cluster in self.clusters:
 			member_labels=[member.label for member in cluster.members]
-			max_count=max([member_labels.count(label) for label in range(20)])
+			max_count=max(member_labels.count(label) for label in range(20))
 			majority_sum+=max_count
 		return majority_sum/len(self.data)
 
@@ -147,6 +156,7 @@ class Kmeans:
 
 km=Kmeans(20)
 km.load_data("C:\\Users\\pl\\Documents\\Python_Project\\ML_DS_2020\\session_1\\TF_IDF\\train_tf_idf_vector.txt")
-km.run(0,'centroid',2)
-print(km.compute_purity())
-print(km.compute_NMI())
+km.run(2020,'centroid',0)
+print('iteration',km.iteration)
+print('purity',km.compute_purity())
+print('NMI',km.compute_NMI())
